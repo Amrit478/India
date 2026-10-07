@@ -1,0 +1,47 @@
+loki.write "default" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}
+
+loki.source.syslog "udp" {
+  listener {
+    address       = "0.0.0.0:1514"
+    protocol      = "udp"
+    syslog_format = "rfc3164"
+    labels        = {
+      job      = "syslog",
+      protocol = "udp",
+    }
+  }
+
+  forward_to = [
+    loki.write.default.receiver,
+  ]
+}
+
+loki.source.syslog "tcp" {
+  listener {
+    address       = "0.0.0.0:1515"
+    protocol      = "tcp"
+    syslog_format = "rfc3164"
+    labels        = {
+      job      = "syslog",
+      protocol = "tcp",
+    }
+  }
+
+  forward_to = [
+    loki.write.default.receiver,
+  ]
+}
+
+loki.source.file "netflow" {
+  targets = [
+    {__path__ = "/var/log/goflow2/flows.log", job = "netflow"},
+  ]
+
+  forward_to = [
+    loki.write.default.receiver,
+  ]
+}

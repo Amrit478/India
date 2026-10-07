@@ -1,0 +1,137 @@
+services:
+
+  grafana:
+    image: grafana/grafana-oss:latest
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: CHANGE_THIS_PASSWORD
+    networks:
+      - monitoring
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./targets:/etc/prometheus/targets:ro
+      - prometheus-data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=30d"
+    networks:
+      - monitoring
+
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    command:
+      - -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - loki-data:/loki
+    networks:
+      - monitoring
+
+  alloy:
+    image: grafana/alloy:latest
+    container_name: alloy
+    restart: unless-stopped
+    ports:
+      - "514:1514/udp"
+      - "1514:1514/udp"
+      - "1515:1515/tcp"
+    volumes:
+      - ./config.alloy:/etc/alloy/config.alloy:ro
+      # read-only mount of the flow log goflow2 writes, so Alloy can tail it
+      - goflow2-logs:/var/log/goflow2:ro
+    command:
+      - run
+      - /etc/alloy/config.alloy
+      - --server.http.listen-addr=0.0.0.0:12345
+    networks:
+      - monitoring
+
+  snmp-exporter:
+    image: prom/snmp-exporter:latest
+    container_name: snmp-exporter
+    restart: unless-stopped
+    ports:
+      - "9116:9116"
+    networks:
+      - monitoring
+
+  blackbox-exporter:
+    image: prom/blackbox-exporter:latest
+    container_name: blackbox-exporter
+    restart: unless-stopped
+    ports:
+      - "9115:9115"
+    volumes:
+      - ./blackbox.yml:/etc/blackbox_exporter/config.yml:ro
+    networks:
+      - monitoring
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    restart: unless-stopped
+    ports:
+      - "9100:9100"
+    pid: host
+    volumes:
+      - /:/host:ro,rslave
+    command:
+      - "--path.rootfs=/host"
+      # timex collector (on by default) already exposes node_timex_sync_status /
+      # node_timex_offset_seconds for the Xubuntu host's own NTP sync state
+    networks:
+      - monitoring
+
+  # ------------------------------------------------------------------
+  # NetFlow / IPFIX / sFlow collector — receives flow exports from your
+  # L3 switch / router and writes decoded records as JSON lines that
+  # Alloy tails and ships into Loki (job=netflow). Also exposes its own
+  # Prometheus metrics (flow/packet counters) on :8080.
+  # ------------------------------------------------------------------
+  goflow2:
+    image: netsampler/goflow2:latest
+    container_name: goflow2
+    restart: unless-stopped
+    user: "0:0"
+    ports:
+      - "2055:2055/udp"   # NetFlow v5 / v9
+      - "4739:4739/udp"   # IPFIX
+      - "6343:6343/udp"   # sFlow (optional, harmless if unused)
+      - "8080:8080"       # Prometheus metrics
+    command:
+      - "-listen=netflow://:2055,netflow://:4739,sflow://:6343"
+      - "-format=json"
+      - "-transport=file"
+      - "-transport.file=/var/log/goflow2/flows.log"
+      - "-addr=:8080"
+    volumes:
+      - goflow2-logs:/var/log/goflow2
+    networks:
+      - monitoring
+
+networks:
+  monitoring:
+    driver: bridge
+
+volumes:
+  grafana-data:
+  prometheus-data:
+  loki-data:
+  goflow2-logs:

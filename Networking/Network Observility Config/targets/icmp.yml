@@ -1,0 +1,6 @@
+- targets:
+    - 10.10.10.1
+    - 10.10.20.1
+    - 10.10.20.2
+  labels:
+    check: reachability
