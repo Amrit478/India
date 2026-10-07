@@ -1,0 +1,44 @@
+**Yes, exactly right.** That is the complete blueprint.
+
+### 1. Day-to-Day File Changes
+
+You only ever touch these files moving forward:
+
+* **In `Automation Labs Config/` (Pushing Configs):**
+* `inventory/hosts.yaml` — Add or modify switch IPs, hostnames, and SSH credentials.
+* `templates/router_base.j2` — Adjust Jinja2 templates (Syslog, NetFlow, SNMP, ACLs, Interfaces).
+* `deploy_configs.py` — Run this script to generate `.cfg` files and push them to your Cisco devices over SSH.
+
+
+* **In `Network Observability Config/targets/` (Receiving Metrics):**
+* `targets/cisco.yml` — Add the switch IP here so SNMP Exporter can poll CPU, memory, and interface metrics.
+* `targets/icmp.yml` — Add the switch IP here so Blackbox Exporter continuously pings it for up/down latency tracking.
+* `targets/tcp.yml` — Add IP:Port pairs (e.g., `192.168.1.1:22`) to check if SSH or other ports are responsive.
+
+
+
+---
+
+### 2. Everything Else Stays As-Is
+
+You do **not** need to touch:
+
+* `docker-compose.yml` (Containers run permanently in the background)
+* `config.alloy` (Listens automatically on port `1514` for incoming RFC 5424 Syslog traffic)
+* `prometheus.yml` (Automatically loads target files from `targets/*.yml`)
+* `blackbox.yml` (Pre-configured probe definitions for ICMP, TCP, HTTP)
+
+---
+
+### 3. Your Final Automation Loop
+
+```text
+  1. ADD/UPDATE DEVICE      2. PUSH CONFIG VIA PYTHON       3. UPDATE TARGETS       4. VISUALIZE IN GRAFANA
+ ┌──────────────────────┐   ┌───────────────────────────┐   ┌───────────────────┐   ┌───────────────────────┐
+ │ Edit hosts.yaml      │──>│ python3 deploy_configs.py │──>│ Edit targets/*.yml│──>│ Check Syslog, Flows,  │
+ │ & router_base.j2     │   │ (Pushes over SSH)         │   │ (Prometheus pings)│   │ & SNMP in Grafana     │
+ └──────────────────────┘   └───────────────────────────┘   └───────────────────┘   └───────────────────────┘
+
+```
+
+Your network automation and observability framework is **fully set, connected, and complete**. You are ready to write code and scale your lab topology!
