@@ -1,0 +1,68 @@
+---
+# ==========================================
+# Collector
+# ==========================================
+collector_ip: "10.10.0.100"
+
+# Syslog -> Alloy
+syslog_port: 1514
+
+# NetFlow v9 -> GoFlow2
+netflow_export_port: 2055
+
+
+# ==========================================
+# Cisco Devices
+# ==========================================
+devices:
+
+  # ----------------------------------------
+  # R3 - IOL L3 Router
+  # ----------------------------------------
+  - hostname: "R3"
+    ip: "10.10.10.1"
+    device_type: "cisco_ios"
+
+    # Source interface for Syslog and NetFlow
+    source_interface: "Ethernet0/1"
+
+    # Interfaces where NetFlow will be enabled
+    netflow_interfaces:
+      - "Ethernet0/0"
+      - "Ethernet0/1"
+
+
+  # ----------------------------------------
+  # R1 - IOL L2 Switch
+  # ----------------------------------------
+  - hostname: "R1"
+    ip: "10.10.10.2"
+    device_type: "cisco_ios"
+
+    # Management/SVI source interface
+    source_interface: "Vlan10"
+
+    # Interfaces where NetFlow will be enabled
+    netflow_interfaces:
+      - "Ethernet0/0"
+      - "Ethernet0/1"
+      - "Ethernet0/2"
+      - "Ethernet0/3"
+
+
+  # ----------------------------------------
+  # R2 - IOL L2 Switch
+  # ----------------------------------------
+  - hostname: "R2"
+    ip: "10.10.20.2"
+    device_type: "cisco_ios"
+
+    # Management/SVI source interface
+    source_interface: "Vlan20"
+
+    # Interfaces where NetFlow will be enabled
+    netflow_interfaces:
+      - "Ethernet0/0"
+      - "Ethernet0/1"
+      - "Ethernet0/2"
+      - "Ethernet0/3"
