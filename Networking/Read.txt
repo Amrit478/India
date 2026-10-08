@@ -1,0 +1,47 @@
+# 🚀 Network Automation & Observability Pipeline
+
+> **Status:** **Yes, your core workflow is 100% complete.** Day-to-day, you only touch your Python script (`deploy_configs.py`), Jinja templates (`router_base.j2`), and inventory file (`hosts.yaml`) when making network changes.
+
+The monitoring files in `Network Observability Config` serve a completely different purpose: **they are the backend receiver and prober system that monitors your switches.**
+
+---
+
+## 🛠️ What Every Monitoring File Does
+
+While Python **pushes** configuration to the switches, these files configure Docker to **pull metrics and receive telemetry** from them.
+
+| File / Target | Role & Function |
+| --- | --- |
+| **`docker-compose.yml`** | Spins up and manages all your monitoring containers (Grafana, Loki, Prometheus, Alloy, GoFlow2, SNMP/Blackbox exporters). |
+| **`config.alloy`** | Configures **Grafana Alloy** to listen for UDP syslog traffic on port `1514`, parse those logs, and send them to Loki. |
+| **`prometheus.yml`** | Tells **Prometheus** how often to scrape metrics and links it to the scrape target files in `targets/`. |
+| **`blackbox.yml`** | Configures the **Blackbox Exporter** engine to execute active probes (ICMP Pings, TCP port checks, HTTP probes) against network targets. |
+| **`targets/cisco.yml`** | Contains the list of Cisco switch IPs that **SNMP Exporter** polls for interface traffic, CPU, and memory metrics. |
+| **`targets/icmp.yml`** | Contains the list of device IPs that **Blackbox Exporter** continuously PINGs to measure round-trip latency and packet loss. |
+| **`targets/tcp.yml`** | Contains the target IPs and ports (e.g., SSH port `22`, HTTP port `80`) that **Blackbox Exporter** checks to verify services are alive. |
+
+---
+
+## 🔄 How Both Halves Work Together
+
+### 1. Automation Side (`Automation Labs Config`)
+
+* You update `hosts.yaml` with a new switch IP.
+* You run `python3 deploy_configs.py`.
+* Python configures the Cisco switch to send Syslog and NetFlow out to your Ubuntu server.
+
+### 2. Observability Side (`Network Observability Config`)
+
+* **`icmp.yml` / `cisco.yml`:** Tell Prometheus to actively start pinging and polling that new switch IP.
+* **`config.alloy` & `goflow2`:** Receive the logs and flow data pushed by the switch.
+* **Grafana:** Displays everything on your dashboards.
+
+---
+
+## ❓ Do You Need to Change These Monitoring Files?
+
+> [!NOTE]
+> * **No**, if you are just deploying network configs via Python.
+> * **Yes, briefly**, whenever you add a new switch IP to your lab, you simply add its IP into `targets/icmp.yml` and `targets/cisco.yml` so Grafana can ping it and track its CPU/bandwidth graphs!
+> 
+>
