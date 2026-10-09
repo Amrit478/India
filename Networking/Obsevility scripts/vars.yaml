@@ -1,14 +1,14 @@
----
 # ==========================================
-# Collector
+# Global Collector & Management Settings
 # ==========================================
 collector_ip: "10.10.0.100"
+ntp_server: "10.10.0.1"
+snmp_community: "public"
 
-# Syslog -> Alloy
+# Observability Ports & Protocols
 syslog_port: 1514
-
-# NetFlow v9 -> GoFlow2
 netflow_export_port: 2055
+netflow_protocol: "ipfix" # Options: 'ipfix' or 'netflow-v9'
 
 
 # ==========================================
@@ -22,15 +22,12 @@ devices:
   - hostname: "R3"
     ip: "10.10.10.1"
     device_type: "cisco_ios"
-
-    # Source interface for Syslog and NetFlow
     source_interface: "Ethernet0/1"
-
-    # Interfaces where NetFlow will be enabled
+    location: "EVE-NG Core Rack"
+    contact: "Admin"
     netflow_interfaces:
       - "Ethernet0/0"
       - "Ethernet0/1"
-
 
   # ----------------------------------------
   # R1 - IOL L2 Switch
@@ -38,17 +35,11 @@ devices:
   - hostname: "R1"
     ip: "10.10.10.2"
     device_type: "cisco_ios"
-
-    # Management/SVI source interface
     source_interface: "Vlan10"
-
-    # Interfaces where NetFlow will be enabled
+    location: "EVE-NG Lab Access 1"
+    contact: "Admin"
     netflow_interfaces:
-      - "Ethernet0/0"
-      - "Ethernet0/1"
-      - "Ethernet0/2"
-      - "Ethernet0/3"
-
+      - "Vlan10"
 
   # ----------------------------------------
   # R2 - IOL L2 Switch
@@ -56,13 +47,8 @@ devices:
   - hostname: "R2"
     ip: "10.10.20.2"
     device_type: "cisco_ios"
-
-    # Management/SVI source interface
     source_interface: "Vlan20"
-
-    # Interfaces where NetFlow will be enabled
+    location: "EVE-NG Lab Access 2"
+    contact: "Admin"
     netflow_interfaces:
-      - "Ethernet0/0"
-      - "Ethernet0/1"
-      - "Ethernet0/2"
-      - "Ethernet0/3"
+      - "Vlan20"
