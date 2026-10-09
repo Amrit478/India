@@ -1,4 +1,3 @@
-```python
 #!/usr/bin/env python3
 
 import os
@@ -42,14 +41,11 @@ def render_config(env, template_name, global_vars, device):
 
     return template.render(
         collector_ip=global_vars.get("collector_ip"),
-        netflow_export_port=global_vars.get(
-            "netflow_export_port",
-            2055
-        ),
-        syslog_port=global_vars.get(
-            "syslog_port",
-            1514
-        ),
+        ntp_server=global_vars.get("ntp_server"),
+        snmp_community=global_vars.get("snmp_community", "public"),
+        netflow_export_port=global_vars.get("netflow_export_port", 2055),
+        syslog_port=global_vars.get("syslog_port", 1514),
+        netflow_protocol=global_vars.get("netflow_protocol", "ipfix"),
         device=device
     )
 
@@ -109,4 +105,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-```
