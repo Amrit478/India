@@ -1,8 +1,28 @@
-```jinja2
+! ==========================================
+! NTP Configuration
+! ==========================================
+{% if ntp_server %}
+ntp server {{ ntp_server }} prefer
+{% endif %}
+
+
+! ==========================================
+! SNMP v2c Configuration
+! ==========================================
+{% if snmp_community %}
+snmp-server community {{ snmp_community }} RO
+snmp-server location {{ device.location | default('EVE-NG Lab') }}
+snmp-server contact {{ device.contact | default('Network Admin') }}
+snmp-server enable traps
+{% if collector_ip %}
+snmp-server host {{ collector_ip }} version 2c {{ snmp_community }}
+{% endif %}
+{% endif %}
+
+
 ! ==========================================
 ! Global Syslog Configuration -> Alloy
 ! ==========================================
-
 logging host {{ collector_ip }} transport udp port {{ syslog_port }}
 logging trap debugging
 logging facility local7
@@ -12,9 +32,8 @@ logging on
 
 
 ! ==========================================
-! Flexible NetFlow Configuration -> GoFlow2
+! Flexible NetFlow / IPFIX -> GoFlow2
 ! ==========================================
-
 flow record FNF_RECORD
  match ipv4 source address
  match ipv4 destination address
@@ -27,15 +46,13 @@ flow record FNF_RECORD
  collect timestamp sys-uptime last
 !
 
-
 flow exporter FNF_EXPORTER
  destination {{ collector_ip }}
  transport udp {{ netflow_export_port }}
  source {{ device.source_interface }}
- export-protocol netflow-v9
+ export-protocol {{ netflow_protocol | default('ipfix') }}
  template data timeout 60
 !
-
 
 flow monitor FNF_MONITOR
  record FNF_RECORD
@@ -46,13 +63,11 @@ flow monitor FNF_MONITOR
 
 
 ! ==========================================
-! Apply NetFlow Monitor
+! Apply Flow Monitor to Interfaces
 ! ==========================================
-
 {% for intf in device.netflow_interfaces %}
 interface {{ intf }}
  ip flow monitor FNF_MONITOR input
  ip flow monitor FNF_MONITOR output
  exit
 {% endfor %}
-```
